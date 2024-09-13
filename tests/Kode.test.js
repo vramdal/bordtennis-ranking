@@ -26,3 +26,7 @@ describe('kode', () => {
     })
 });
 
+describe('web', () => {
+
+});
+

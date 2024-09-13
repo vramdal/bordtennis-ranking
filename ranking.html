@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <link href="https://punkt-cdn.oslo.kommune.no/latest/css/pkt.min.css" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Origo bordtennis-ranking</title>
+    <style></style>
+</head>
+<body>
+<section class="pkt-grid pkt-grid--center">
+    <div class="pkt-cell pkt-cell--span12 pkt-cell--center">
+        <h1 class="pkt-txt-40">Origo bordtennis-ranking</h1>
+    </div>
+    <div class="pkt-cell pkt-cell--span12 pkt-cell--center">
+        <ol>
+        <? for (var i = 0; i < data.length; i++) { ?>
+                <li class="<?=data[i].rowClass?>">
+                    <?=data[i].displayName?> (<?=data[i].poeng?> poeng)
+                </li>
+        <? } ?>
+        </ol>
+    </div>
+</section>
+</body>
+</html>
