@@ -10,18 +10,18 @@ const COL_IDX_SUBMITTER = 5;
 
 const RATING_START_POINTS = 1250;
 
-function chopArray(arr, col) {
-    var resultat = [];
+const chopArray = (arr, col) => {
+    const result = [];
     for (var i = 0; i < arr.length; i++) {
         if (col !== undefined && arr[i][col] === "") {
             break;
-        } else if (col === undefined && arr[i] == "") {
+        } else if (col === undefined && arr[i] === "") {
             break;
         }
-        resultat.push(arr[i]);
+        result.push(arr[i]);
     }
-    return resultat;
-}
+    return result;
+};
 
 const parseRowToGame = (columnValues) => {
     return {
@@ -80,14 +80,15 @@ const getPlayerGame = (game, pos, playerRankings) => {
         opponent: game[`player${(pos + 1) === 1 ? 2 : 1}`],
         opponentSets: game[`setPlayer${(pos + 1) === 1 ? 2 : 1}`],
         datetime: game.datetime,
-        playerRanking: playerRankings[pos]
+        playerRanking: playerRankings[pos],
+        opponentRanking: playerRankings[pos === 1 ? 0 : 1]
     };
 }
 
 const HOME = 0;
 const AWAY = 1;
 
-function getRankingPointsEarnedPrPlayer(isResultExpected, winnerName, gamePlayers, pointOutcomes) {
+const getRankingPointsEarnedPrPlayer = (isResultExpected, winnerName, gamePlayers, pointOutcomes) => {
     const rankingPointsEarnedPrPlayer = [0, 0];
     if (isResultExpected) {
         if (winnerName === gamePlayers[HOME].name) {
@@ -107,24 +108,23 @@ function getRankingPointsEarnedPrPlayer(isResultExpected, winnerName, gamePlayer
         }
     }
     return rankingPointsEarnedPrPlayer;
-}
+};
 
-const beregnPoeng = (data) => {
+const beregnPoeng = (data, gameListener) => {
     const {games, userNames} = getGamesAndusers(data);
-    const resultsTable = [];
     const usersWithRankingPointsHistory = new Map(userNames.values().map(userName => ([userName, [RATING_START_POINTS]])));
 
     const getPlayerRankingHistory = userName => usersWithRankingPointsHistory.get(userName);
 
     const getPlayerRanking = (rankingPlayerHistories, pos) => Math.max(0, rankingPlayerHistories[pos].reduce((a, b) => a + b, 0));
 
-    function getRankingPointsOutcomes(expectedWinnerName, winnerName, playerRankingsBefore, gamePlayers) {
+    const getRankingPointsOutcomes = (expectedWinnerName, winnerName, playerRankingsBefore, gamePlayers) => {
         const isResultExpected = expectedWinnerName === undefined || winnerName === expectedWinnerName;
         const rankingDiff = Math.abs(playerRankingsBefore[HOME] - playerRankingsBefore[AWAY]);
         const pointOutcomes = gameRankingPointOutcome(rankingDiff);
         const rankingPointsEarnedPrPlayer = getRankingPointsEarnedPrPlayer(isResultExpected, winnerName, gamePlayers, pointOutcomes);
         return {isResultExpected, rankingPointsEarnedPrPlayer};
-    }
+    };
 
     games.forEach(game => {
         const playerNames = [game.player1, game.player2];
@@ -140,16 +140,42 @@ const beregnPoeng = (data) => {
         } = getRankingPointsOutcomes(expectedWinnerName, winnerName, playerRankingsBefore, gamePlayers);
         const playerRankingsAfter = playerRankingsBefore.map((playerRankingBefore, pos) => playerRankingBefore + rankingPointsEarnedPrPlayer[pos]);
         rankingPointsEarnedPrPlayer.forEach((points, pos) => usersWithRankingPointsHistory.set(gamePlayers[pos].name, [...(rankingPlayerHistories[pos]), rankingPointsEarnedPrPlayer[pos]]));
-        gamePlayers.forEach((gamePlayer, pos) => {
-            resultsTable.push([
-                new Date(game.datetime * 1000), `${(gamePlayer.name)}`, playerRankingsBefore[pos], `${(gamePlayer.opponent)} (${playerRankingsBefore[pos === 1 ? 0 : 1]}p)`, `${(gamePlayer.sets)} - ${(gamePlayer.opponentSets)}`, gamePlayer.sets > gamePlayer.opponentSets ? "Seier" : "Tap", isResultExpected ? "Ventet" : "Uventet", rankingPointsEarnedPrPlayer[pos], playerRankingsAfter[pos]
-            ]);
-
-        })
+        gameListener && gameListener({
+            game,
+            gamePlayers,
+            rankingPointsEarnedPrPlayer,
+            playerRankingsAfter,
+            isResultExpected
+        });
     });
+    return {usersWithRankingPointsHistory};
+}
+
+const historyTable = (data) => {
+    const resultsTable = [];
+    beregnPoeng(data, ({
+                           game,
+                           gamePlayers,
+                           rankingPointsEarnedPrPlayer,
+                           playerRankingsAfter,
+                           isResultExpected
+                       }) => gamePlayers.forEach((gamePlayer, pos) => {
+        resultsTable.push([
+            new Date(game.datetime * 1000), `${(gamePlayer.name)}`, gamePlayer.playerRanking, `${(gamePlayer.opponent)} (${gamePlayer.opponentRanking}p)`, `${(gamePlayer.sets)} - ${(gamePlayer.opponentSets)}`, gamePlayer.sets > gamePlayer.opponentSets ? "Seier" : "Tap", isResultExpected ? "Ventet" : "Uventet", rankingPointsEarnedPrPlayer[pos], playerRankingsAfter[pos]
+        ]);
+
+    }));
     return resultsTable;
 }
 
-module.exports = {
-    beregnPoeng
+const rankingTable = (data) => {
+    const {usersWithRankingPointsHistory} = beregnPoeng(data);
+    return Array.from(usersWithRankingPointsHistory.entries().map(([userName, rankingPointsHistory]) => [userName, rankingPointsHistory.reduce((a, b) => a + b, 0)])).toSorted((a, b) => b[1] - a[1]);
 }
+
+/*
+module.exports = {
+    historyTable,
+    rankingTable
+}
+*/
