@@ -6,6 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Origo bordtennis-ranking</title>
     <style></style>
+    <script>
+        const setLiProps = (li, item) => {
+            li.className = item.rowClass;
+            li.innerHTML = item.displayName + ' (' + item.poeng + ' poeng)';
+            li.dataset.poeng = item.poeng;
+        };
+
+        function onSuccess(updatedData) {
+            const list = document.getElementById('rankingList');
+            updatedData.slice(0, list.childElementCount).forEach((item, idx) => {
+                const existingLi = list.children[idx];
+                existingLi.className = item.rowClass;
+                existingLi.innerHTML = item.displayName + ' (' + item.poeng + ' poeng)';
+                existingLi.dataset.poeng = item.poeng;
+            });
+
+            updatedData.slice(list.childElementCount).forEach(item => {
+                const li = document.createElement('li');
+                setLiProps(li, item);
+                list.appendChild(li);
+            });
+            while (list.childElementCount > updatedData.length) {
+                list.removeChild(list.lastElementChild);
+            }
+        }
+        setInterval(()=>{
+            google.script.run.withSuccessHandler(onSuccess).getDataForWebDisplay()
+        },1e4)
+
+    </script>
 </head>
 <body>
 <section class="pkt-grid pkt-grid--center">
@@ -13,7 +43,7 @@
         <h1 class="pkt-txt-40">Origo bordtennis-ranking</h1>
     </div>
     <div class="pkt-cell pkt-cell--span12 pkt-cell--center">
-        <ol>
+        <ol id="rankingList">
         <? for (var i = 0; i < data.length; i++) { ?>
                 <li class="<?=data[i].rowClass?>">
                     <?=data[i].displayName?> (<?=data[i].poeng?> poeng)
