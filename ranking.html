@@ -11,15 +11,14 @@
             li.className = item.rowClass;
             li.innerHTML = item.displayName + ' (' + item.poeng + ' poeng)';
             li.dataset.poeng = item.poeng;
+            li.value = item.posisjon;
         };
 
         function onSuccess(updatedData) {
             const list = document.getElementById('rankingList');
             updatedData.slice(0, list.childElementCount).forEach((item, idx) => {
                 const existingLi = list.children[idx];
-                existingLi.className = item.rowClass;
-                existingLi.innerHTML = item.displayName + ' (' + item.poeng + ' poeng)';
-                existingLi.dataset.poeng = item.poeng;
+                setLiProps(existingLi, item);
             });
 
             updatedData.slice(list.childElementCount).forEach(item => {
@@ -40,6 +39,7 @@
 <body>
 <section class="pkt-grid pkt-grid--center">
     <div class="pkt-cell pkt-cell--span12 pkt-cell--center">
+        <img src="https://i.imgur.com/KTyxrMD.png" alt="St Hallvard spiller bordtennis" />
         <h1 class="pkt-txt-40">Origo bordtennis-ranking</h1>
     </div>
     <div class="pkt-cell pkt-cell--span12 pkt-cell--center">

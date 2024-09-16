@@ -13,13 +13,18 @@ const getRowClass = (index) => {
 }
 
 const getDataForWebDisplay = () => {
-    return SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Rankingtabell').getDataRange().getValues().slice(1).map(row => ({
+    const rows = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Rankingtabell').getDataRange().getValues().slice(1).map(row => ({
         navn: row[0],
         poeng: row[1]
-    })).map((row, index) => ({
+    }));
+    let {currentPoints, currentPosition} = {currentPoints: 0, currentPosition: 0};
+    rows.forEach((row, index) => {
+        row.posisjon = index > 0 && rows[index - 1].poeng === row.poeng ? rows[index - 1].posisjon : index + 1;
+    });
+    return rows.map((row, index) => ({
         ...row,
         displayName: getDisplayName(row.navn),
-        rowClass: getRowClass(index)
+        rowClass: getRowClass(row.posisjon)
     }));
 };
 
