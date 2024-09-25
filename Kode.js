@@ -170,7 +170,7 @@ const historyTable = (data) => {
 
 const rankingTable = (data) => {
     const {usersWithRankingPointsHistory} = beregnPoeng(data);
-    return Array.from(usersWithRankingPointsHistory.entries().map(([userName, rankingPointsHistory]) => [userName, rankingPointsHistory.reduce((a, b) => a + b, 0)])).toSorted((a, b) => b[1] - a[1]);
+    return Array.from(usersWithRankingPointsHistory.entries().map(([userName, rankingPointsHistory]) => [userName, rankingPointsHistory.reduce((a, b) => a + b, 0)])).toSorted((a, b) => b[1] - a[1]).map(([userName, points], idx) => [userName, points, idx + 1]);
 }
 
 /*

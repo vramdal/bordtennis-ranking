@@ -5,7 +5,26 @@
     <link href="https://punkt-cdn.oslo.kommune.no/latest/css/pkt.min.css" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Origo bordtennis-ranking</title>
-    <style></style>
+    <style>
+        main {
+            background-image: url('https://i.imgur.com/9If9jCS.png'), url('https://i.imgur.com/PfHw7fo.png');
+            background-size: 60vh auto, 35vh auto;
+            background-repeat: no-repeat, no-repeat;
+            background-position: center left, center right;
+            height: 100vh;
+        }
+
+        main section {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 1em;
+            border-radius: 1em;
+            min-height: 80vh;
+            width: 60vw;
+            list-style-position: inside;
+            margin: auto;
+            text-align: center;
+        }
+    </style>
     <script>
         const setLiProps = (li, item) => {
             li.className = item.rowClass;
@@ -37,12 +56,12 @@
     </script>
 </head>
 <body>
-<section class="pkt-grid pkt-grid--center">
+<main class="pkt-grid pkt-grid--center">
     <div class="pkt-cell pkt-cell--span12 pkt-cell--center">
-        <img src="https://i.imgur.com/KTyxrMD.png" alt="St Hallvard spiller bordtennis" />
+<!--        <img src="https://i.imgur.com/KTyxrMD.png" alt="St Hallvard spiller bordtennis" />-->
         <h1 class="pkt-txt-40">Origo bordtennis-ranking</h1>
     </div>
-    <div class="pkt-cell pkt-cell--span12 pkt-cell--center">
+    <section class="pkt-cell pkt-cell--span12 pkt-cell--center">
         <ol id="rankingList">
         <? for (var i = 0; i < data.length; i++) { ?>
                 <li class="<?=data[i].rowClass?>">
@@ -50,7 +69,7 @@
                 </li>
         <? } ?>
         </ol>
-    </div>
-</section>
+    </section>
+</main>
 </body>
 </html>
