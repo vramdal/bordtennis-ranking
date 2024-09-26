@@ -7,6 +7,7 @@ const COL_IDX_MATCH_DATETIME = 2;
 const COL_IDX_SET_PLAYER_1 = 3;
 const COL_IDX_SET_PLAYER_2 = 4;
 const COL_IDX_SUBMITTER = 5;
+const COL_IDX_HANDICAP = 7;
 
 const RATING_START_POINTS = 1250;
 
@@ -30,7 +31,8 @@ const parseRowToGame = (columnValues) => {
         datetime: columnValues[COL_IDX_MATCH_DATETIME],
         setPlayer1: columnValues[COL_IDX_SET_PLAYER_1],
         setPlayer2: columnValues[COL_IDX_SET_PLAYER_2],
-        submitter: columnValues[COL_IDX_SUBMITTER]
+        submitter: columnValues[COL_IDX_SUBMITTER],
+        handicap: columnValues[COL_IDX_HANDICAP] || 0
     }
 }
 
@@ -44,27 +46,38 @@ const getUniqueUsers = (games) => {
     return users1Set.union(users2Set);
 }
 
-const gameRankingPointOutcome = (rankingDiff) => {
+const gameRankingPointOutcome = (rankingDiff, handicap) => {
     // [uventet resultat seier, uventet resultat tap, forventet resultat seier, forventet resultat tap]
+    let outcomeBeforeHandicap;
     if (rankingDiff === 0) {
-        return [8, -7, 8, -7]
+        outcomeBeforeHandicap = [8, -7, 8, -7]
     } else if (rankingDiff <= 49) {
-        return [8, -8, 8, -6]
+        outcomeBeforeHandicap = [8, -8, 8, -6]
     } else if (rankingDiff <= 99) {
-        return [10, -10, 5, -5]
+        outcomeBeforeHandicap = [10, -10, 5, -5]
     } else if (rankingDiff <= 149) {
-        return [12, -12, 6, -4]
+        outcomeBeforeHandicap = [12, -12, 6, -4]
     } else if (rankingDiff <= 199) {
-        return [14, -14, 5, -3]
+        outcomeBeforeHandicap = [14, -14, 5, -3]
     } else if (rankingDiff <= 299) {
-        return [16, -16, 4, -2]
+        outcomeBeforeHandicap = [16, -16, 4, -2]
     } else if (rankingDiff <= 399) {
-        return [18, -18, 3, -2]
+        outcomeBeforeHandicap = [18, -18, 3, -2]
     } else if (rankingDiff <= 599) {
-        return [20, -20, 2, -1]
+        outcomeBeforeHandicap = [20, -20, 2, -1]
     } else {
-        return [25, -25, 1, -1];
+        outcomeBeforeHandicap = [25, -25, 1, -1];
     }
+    if (handicap > 0) {
+        outcomeBeforeHandicap = outcomeBeforeHandicap.map(outcome => {
+            if (outcome > 0) {
+                return Math.max(outcome - handicap, 1);
+            } else {
+                return Math.min(outcome + handicap, -1);
+            }
+        });
+    }
+    return outcomeBeforeHandicap;
 }
 
 const getGamesAndusers = data => {
@@ -74,6 +87,8 @@ const getGamesAndusers = data => {
 };
 
 const getPlayerGame = (game, pos, playerRankings) => {
+    const rankingDiff = playerRankings[pos] - playerRankings[pos === 1 ? 0 : 1];
+    const isExpectedToWin = rankingDiff > 0 && 'YES' || rankingDiff < 0 && 'NO' || undefined;
     return {
         name: game[`player${pos + 1}`],
         sets: game[`setPlayer${pos + 1}`],
@@ -81,7 +96,8 @@ const getPlayerGame = (game, pos, playerRankings) => {
         opponentSets: game[`setPlayer${(pos + 1) === 1 ? 2 : 1}`],
         datetime: game.datetime,
         playerRanking: playerRankings[pos],
-        opponentRanking: playerRankings[pos === 1 ? 0 : 1]
+        opponentRanking: playerRankings[pos === 1 ? 0 : 1],
+        advantage: game.handicap && (isExpectedToWin === 'YES' && game.handicap * -1) || (isExpectedToWin === 'NO' && game.handicap) || 0
     };
 }
 
@@ -112,16 +128,24 @@ const getRankingPointsEarnedPrPlayer = (isResultExpected, winnerName, gamePlayer
 
 const beregnPoeng = (data, gameListener) => {
     const {games, userNames} = getGamesAndusers(data);
-    const usersWithRankingPointsHistory = new Map(userNames.values().map(userName => ([userName, [RATING_START_POINTS]])));
+    const startPoints = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME_DISPLAY_NAMES).getDataRange().getValues().slice(1).map(row => ({
+       userName: row[0],
+       displayName: row[1],
+       startPoints: row[2]
+    }));
+    const usersWithRankingPointsHistory = new Map(userNames.values().map(userName => {
+        const foundInDisplayNames = startPoints.find(user => user.userName === userName);
+        return ([userName, [foundInDisplayNames && foundInDisplayNames.startPoints || RATING_START_POINTS]]);
+    }));
 
     const getPlayerRankingHistory = userName => usersWithRankingPointsHistory.get(userName);
 
     const getPlayerRanking = (rankingPlayerHistories, pos) => Math.max(0, rankingPlayerHistories[pos].reduce((a, b) => a + b, 0));
 
-    const getRankingPointsOutcomes = (expectedWinnerName, winnerName, playerRankingsBefore, gamePlayers) => {
+    const getRankingPointsOutcomes = (expectedWinnerName, winnerName, playerRankingsBefore, gamePlayers, handicap) => {
         const isResultExpected = expectedWinnerName === undefined || winnerName === expectedWinnerName;
         const rankingDiff = Math.abs(playerRankingsBefore[HOME] - playerRankingsBefore[AWAY]);
-        const pointOutcomes = gameRankingPointOutcome(rankingDiff);
+        const pointOutcomes = gameRankingPointOutcome(rankingDiff, handicap);
         const rankingPointsEarnedPrPlayer = getRankingPointsEarnedPrPlayer(isResultExpected, winnerName, gamePlayers, pointOutcomes);
         return {isResultExpected, rankingPointsEarnedPrPlayer};
     };
@@ -137,7 +161,7 @@ const beregnPoeng = (data, gameListener) => {
         const {
             isResultExpected,
             rankingPointsEarnedPrPlayer
-        } = getRankingPointsOutcomes(expectedWinnerName, winnerName, playerRankingsBefore, gamePlayers);
+        } = getRankingPointsOutcomes(expectedWinnerName, winnerName, playerRankingsBefore, gamePlayers, game.handicap);
         const playerRankingsAfter = playerRankingsBefore.map((playerRankingBefore, pos) => playerRankingBefore + rankingPointsEarnedPrPlayer[pos]);
         rankingPointsEarnedPrPlayer.forEach((points, pos) => usersWithRankingPointsHistory.set(gamePlayers[pos].name, [...(rankingPlayerHistories[pos]), rankingPointsEarnedPrPlayer[pos]]));
         gameListener && gameListener({
@@ -161,7 +185,7 @@ const historyTable = (data) => {
                            isResultExpected
                        }) => gamePlayers.forEach((gamePlayer, pos) => {
         resultsTable.push([
-            new Date(game.datetime * 1000), `${(gamePlayer.name)}`, gamePlayer.playerRanking, `${(gamePlayer.opponent)} (${gamePlayer.opponentRanking}p)`, `${(gamePlayer.sets)} - ${(gamePlayer.opponentSets)}`, gamePlayer.sets > gamePlayer.opponentSets ? "Seier" : "Tap", isResultExpected ? "Ventet" : "Uventet", rankingPointsEarnedPrPlayer[pos], playerRankingsAfter[pos]
+            new Date(game.datetime * 1000), `${(gamePlayer.name)}`, gamePlayer.playerRanking, `${(gamePlayer.opponent)} (${gamePlayer.opponentRanking}p)`, `${(gamePlayer.sets)} - ${(gamePlayer.opponentSets)}`, gamePlayer.advantage, gamePlayer.sets > gamePlayer.opponentSets ? "Seier" : "Tap", isResultExpected ? "Ventet" : "Uventet", rankingPointsEarnedPrPlayer[pos], playerRankingsAfter[pos]
         ]);
 
     }));
@@ -170,7 +194,7 @@ const historyTable = (data) => {
 
 const rankingTable = (data) => {
     const {usersWithRankingPointsHistory} = beregnPoeng(data);
-    return Array.from(usersWithRankingPointsHistory.entries().map(([userName, rankingPointsHistory]) => [userName, rankingPointsHistory.reduce((a, b) => a + b, 0)])).toSorted((a, b) => b[1] - a[1]).map(([userName, points], idx) => [userName, points, idx + 1]);
+    return Array.from(usersWithRankingPointsHistory.entries().map(([userName, rankingPointsHistory]) => [userName, rankingPointsHistory.reduce((a, b) => a + b, 0)])).toSorted((a, b) => b[1] - a[1]).map(([userName, points], idx) => [userName, points, idx + 1, getDisplayName(userName)]);
 }
 
 /*
@@ -179,3 +203,44 @@ module.exports = {
     rankingTable
 }
 */
+
+const SHEET_NAME_CHALLENGES = "Utfordringer";
+const SHEET_NAME_RANKINGTABLE = "Rankingtabell";
+
+const getHandicapRecommendation = (userRanking1, userRanking2) => {
+    const rankingDiff = userRanking1.points - userRanking2.points;
+    const recommendedHandicap = Math.min(Math.floor(Math.abs(rankingDiff) / 25), 8);
+    if (Math.abs(rankingDiff) >= 50) {
+        return `${userRanking1.displayName} har ${userRanking1.points} rankingpoeng, ${userRanking2.displayName} har ${userRanking2.points}. Hvis dere vil gjøre det spennende, kan ${rankingDiff < 0 ? userRanking1.displayName : userRanking2.displayName} starte med ${recommendedHandicap}-0`;
+    } else {
+        return `${userRanking1.displayName} har ${userRanking1.points} rankingpoeng, ${userRanking2.displayName} har ${userRanking2.points}. Dette blir jevnt!`;
+    }
+}
+
+const challengeRecommendations = (rows) => {
+    rows = chopArray(rows, 0);
+    const rankingTable = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME_RANKINGTABLE);
+    const userRankings = rankingTable.getDataRange().getValues().map(row => ({
+        name: row[0],
+        points: row[1],
+        position: row[2],
+        displayName: row[3]
+    }));
+    Logger.log(userRankings.length + " users found");
+    const findUser = name => userRankings.find(user => user.name === name);
+    Logger.log(rows.length + " challenges found");
+    return rows.map((row) => {
+        const player1 = findUser(row[1]);
+        const player2 = findUser(row[2]);
+        const rankingDiff = (player1 && player2) && (player1.points - player2.points);
+        Logger.log("Player 1: " + player1 + ", Player 2: " + player2, "Ranking diff: " + rankingDiff);
+        let handicapRecommendation = "";
+        if (rankingDiff !== undefined) {
+            handicapRecommendation = getHandicapRecommendation(player1, player2);
+            Logger.log("Handicap recommendation: " + handicapRecommendation);
+        } else {
+            handicapRecommendation = "Dette blir spennende!";
+        }
+        return [player1 && player1.points || "", player2 && player2.points || "", rankingDiff || 0, handicapRecommendation || ""];
+    });
+}
