@@ -68,16 +68,15 @@ const gameRankingPointOutcome = (rankingDiff, handicap) => {
     } else {
         outcomeBeforeHandicap = [25, -25, 1, -1];
     }
-    if (handicap > 0) {
-        outcomeBeforeHandicap = outcomeBeforeHandicap.map(outcome => {
-            if (outcome > 0) {
-                return Math.max(outcome - handicap, 1);
-            } else {
-                return Math.min(outcome + handicap, -1);
-            }
-        });
-    }
-    return outcomeBeforeHandicap;
+    const outcome = handicap === 0 ? outcomeBeforeHandicap : outcomeBeforeHandicap.map(outcome => {
+        if (outcome > 0) {
+            return Math.max(outcome - handicap * -1, 1);
+        } else {
+            return Math.min(outcome + handicap * -1, -1);
+        }
+    });
+    Logger.log("rankingDiff: " + rankingDiff + " handicap: " + handicap + " outcome: " + JSON.stringify(outcome));
+    return outcome;
 }
 
 const getGamesAndusers = data => {
