@@ -233,7 +233,7 @@ const challengeRecommendations = (rows) => {
         const player2 = findUser(row[2]);
         const rankingDiff = (player1 && player2) && (player1.points - player2.points);
         Logger.log("Player 1: " + player1 + ", Player 2: " + player2, "Ranking diff: " + rankingDiff);
-        let handicapRecommendation = "";
+        let handicapRecommendation;
         if (rankingDiff !== undefined) {
             handicapRecommendation = getHandicapRecommendation(player1, player2);
             Logger.log("Handicap recommendation: " + handicapRecommendation);
@@ -242,4 +242,25 @@ const challengeRecommendations = (rows) => {
         }
         return [player1 && player1.points || "", player2 && player2.points || "", rankingDiff || 0, handicapRecommendation || ""];
     });
+}
+
+const getRankingMessages = (slackNameRows, rankingTableValues) => {
+    const namesAndMessages = chopArray(rankingTableValues, 0).map((row, rowIndex) => {
+        const slackName = row[0];
+        let melding = `Du har ${row[1]} rankingpoeng og ligger på ${row[2]}. plass`;
+        // Det er bare x poeng opp til nn på neste plass
+        if (rowIndex < rankingTableValues.length - 1) {
+            melding += `, og det er ${rankingTableValues[rowIndex][1] - rankingTableValues[rowIndex + 1][1]} poeng ned til ${rankingTableValues[rowIndex + 1][3]}`;
+        }
+        // nn ligger bak deg med x poeng
+        if (rowIndex > 0) {
+            melding += `, og det er bare ${rankingTableValues[rowIndex - 1][1] - rankingTableValues[rowIndex][1]} poeng opp til ${rankingTableValues[rowIndex - 1][3]} på ${rankingTableValues[rowIndex - 1][2]}. plass`;
+        }
+        return [slackName, melding];
+    });
+    Logger.log("namesAndMessages " + JSON.stringify(namesAndMessages))
+    return chopArray(slackNameRows, 0).map(slackNameRow => {
+        const nameAndMessage = namesAndMessages.find(nameAndMessage => nameAndMessage[0] === slackNameRow[0]);
+        return nameAndMessage && nameAndMessage[1] || "Du har ingen ranking foreløpig. Hva med å utfordre noen?";
+    })
 }
