@@ -15,7 +15,9 @@ const getRowClass = (index) => {
 const getDataForWebDisplay = () => {
     const rows = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Rankingtabell').getDataRange().getValues().slice(1).map(row => ({
         navn: row[0],
-        poeng: row[1]
+        poeng: row[1],
+        displayName: row[3],
+        numGames: row[4]
     }));
     let {currentPoints, currentPosition} = {currentPoints: 0, currentPosition: 0};
     rows.forEach((row, index) => {
@@ -23,7 +25,6 @@ const getDataForWebDisplay = () => {
     });
     return rows.map((row, index) => ({
         ...row,
-        displayName: getDisplayName(row.navn),
         rowClass: getRowClass(row.posisjon)
     }));
 };

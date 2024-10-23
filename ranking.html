@@ -9,12 +9,8 @@
     <!--suppress CssUnusedSymbol -->
     <style>
         body {
-            background-color: #3f87a6;
+            background: linear-gradient(#3f87a6, #1b3743);
             transition: background-color 1s;
-        }
-
-        body.updated {
-            background-color: black;
         }
 
         h1 {
@@ -74,7 +70,7 @@
 
         const setLiProps = (li, item) => {
             li.className = item.rowClass;
-            li.innerHTML = item.displayName + ' (' + item.poeng + ' poeng)';
+            li.innerHTML = item.displayName + ' (' + item.poeng + ' poeng, ' + item.numGames + ' kamper)';
             li.dataset.poeng = item.poeng;
             li.value = item.posisjon;
         };
@@ -124,7 +120,7 @@
         <ol id="rankingList">
             <? for (var i = 0; i < data.length; i++) { ?>
             <li class="<?=data[i].rowClass?>">
-                <?=data[i].displayName?> (<?=data[i].poeng?> poeng)
+                <?=data[i].displayName?> (<?=data[i].poeng?> poeng, <?=data[i].numGames?> kamper)
             </li>
             <? } ?>
         </ol>

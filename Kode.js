@@ -192,8 +192,20 @@ const historyTable = (data) => {
 }
 
 const rankingTable = (data) => {
-    const {usersWithRankingPointsHistory} = beregnPoeng(data);
-    return Array.from(usersWithRankingPointsHistory.entries().map(([userName, rankingPointsHistory]) => [userName, rankingPointsHistory.reduce((a, b) => a + b, 0)])).toSorted((a, b) => b[1] - a[1]).map(([userName, points], idx) => [userName, points, idx + 1, getDisplayName(userName)]);
+    const numGamesPrUser = new Map();
+    const {usersWithRankingPointsHistory} = beregnPoeng(data, ({
+                                                                   game,
+                                                                   gamePlayers,
+                                                                   rankingPointsEarnedPrPlayer,
+                                                                   playerRankingsAfter,
+                                                                   isResultExpected
+                                                               }) => {
+        gamePlayers.forEach((gamePlayer, pos) => {
+            const numGames = numGamesPrUser.get(gamePlayer.name) || 0;
+            numGamesPrUser.set(gamePlayer.name, numGames + 1);
+        });
+    });
+    return Array.from(usersWithRankingPointsHistory.entries().map(([userName, rankingPointsHistory]) => [userName, rankingPointsHistory.reduce((a, b) => a + b, 0)])).toSorted((a, b) => b[1] - a[1]).map(([userName, points], idx) => [userName, points, idx + 1, getDisplayName(userName), numGamesPrUser.get(userName)]);
 }
 
 /*
