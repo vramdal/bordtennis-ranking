@@ -63,6 +63,25 @@
             margin: auto;
             text-align: center;
         }
+
+        ol {
+            columns: 2;
+            column-gap: 1em;
+        }
+
+        ol li:nth-child(1), ol li:nth-child(2), ol li:nth-child(3) {
+            column-span: all;
+        }
+
+        ol li:nth-child(3) {
+            margin-bottom: 1em;
+        }
+
+        ol li span {
+            white-space: nowrap;
+            font-size: smaller;
+        }
+
     </style>
     <script>
 
@@ -70,7 +89,7 @@
 
         const setLiProps = (li, item) => {
             li.className = item.rowClass;
-            li.innerHTML = item.displayName + ' (' + item.poeng + ' poeng, ' + item.numGames + ' kamper)';
+            li.innerHTML = item.displayName + ' <span>(' + item.poeng + ' poeng, ' + item.numGames + ' kamper)</span>';
             li.dataset.poeng = item.poeng;
             li.value = item.posisjon;
         };
@@ -120,7 +139,7 @@
         <ol id="rankingList">
             <? for (var i = 0; i < data.length; i++) { ?>
             <li class="<?=data[i].rowClass?>">
-                <?=data[i].displayName?> (<?=data[i].poeng?> poeng, <?=data[i].numGames?> kamper)
+                <?=data[i].displayName?> (<span><?=data[i].poeng?> poeng, <?=data[i].numGames?> kamper</span>)
             </li>
             <? } ?>
         </ol>

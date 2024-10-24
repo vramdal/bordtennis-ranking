@@ -277,3 +277,19 @@ const getRankingMessages = (slackNameRows, rankingTableValues) => {
         return nameAndMessage && nameAndMessage[1] || "Du har ingen ranking foreløpig. Hva med å utfordre noen?";
     })
 }
+
+const matchReports = (formSubmissionRows) => {
+    const rows = chopArray(formSubmissionRows, 0);
+    const rankingTable = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME_RANKINGTABLE);
+    const userRankings = rankingTable.getDataRange().getValues().map(row => ({
+        name: row[0],
+        points: row[1],
+        position: row[2],
+        displayName: row[3]
+    }));
+    rows.map(row => {
+        const player1Game = getPlayerGame(parseRowToGame(row), 0, userRankings);
+        const player2Game = getPlayerGame(parseRowToGame(row), 1, userRankings);
+    });
+
+}
