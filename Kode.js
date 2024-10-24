@@ -128,9 +128,9 @@ const getRankingPointsEarnedPrPlayer = (isResultExpected, winnerName, gamePlayer
 const beregnPoeng = (data, gameListener) => {
     const {games, userNames} = getGamesAndusers(data);
     const startPoints = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME_DISPLAY_NAMES).getDataRange().getValues().slice(1).map(row => ({
-       userName: row[0],
-       displayName: row[1],
-       startPoints: row[2]
+        userName: row[0],
+        displayName: row[1],
+        startPoints: row[2]
     }));
     const usersWithRankingPointsHistory = new Map(userNames.values().map(userName => {
         const foundInDisplayNames = startPoints.find(user => user.userName === userName);
@@ -202,7 +202,8 @@ const rankingTable = (data) => {
                                                                }) => {
         gamePlayers.forEach((gamePlayer, pos) => {
             const numGames = numGamesPrUser.get(gamePlayer.name) || 0;
-            numGamesPrUser.set(gamePlayer.name, numGames + 1);
+            const delta = gamePlayer.name === 'Håkon Lexberg' ? 0.5 : 1;
+            numGamesPrUser.set(gamePlayer.name, numGames + delta);
         });
     });
     return Array.from(usersWithRankingPointsHistory.entries().map(([userName, rankingPointsHistory]) => [userName, rankingPointsHistory.reduce((a, b) => a + b, 0)])).toSorted((a, b) => b[1] - a[1]).map(([userName, points], idx) => [userName, points, idx + 1, getDisplayName(userName), numGamesPrUser.get(userName)]);
