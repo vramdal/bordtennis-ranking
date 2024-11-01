@@ -119,7 +119,7 @@ const getRankingPointsEarnedPrPlayer = (isResultExpected, winnerName, gamePlayer
             rankingPointsEarnedPrPlayer[AWAY] = pointOutcomes[1];
         } else {
             rankingPointsEarnedPrPlayer[HOME] = pointOutcomes[1];
-            rankingPointsEarnedPrPlayer[AWAY] = pointOutcomes[2];
+            rankingPointsEarnedPrPlayer[AWAY] = pointOutcomes[0];
         }
     }
     return rankingPointsEarnedPrPlayer;
